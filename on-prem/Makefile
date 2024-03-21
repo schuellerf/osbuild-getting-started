@@ -18,7 +18,8 @@ weldr_client_version_x=$(shell echo $(weldr_client_version) | sed -e s/v//g)
 
 .PHONY: setup-host
 setup-host: ## Install all necessary packages on the host system
-	./bin/setup-host.py container
+	@echo "We need to run the installation as root"
+	sudo ./bin/setup-host.py container
 
 .PHONY: build/osbuild
 build/osbuild: ## Build the container for building osbuild rpms
@@ -86,6 +87,7 @@ run/composer: # Launch the osbuild-composer container
 	podman build \
 		--volume $(shell pwd)/build/rpms:/rpms:ro,Z \
 		--build-arg osbuild_composer_version=${osbuild_composer_version_x} \
+		--build-arg osbuild_version=${osbuild_version_x} \
 		-t $(PREFIX_RUN)/composer:$(osbuild_composer_version) \
 		src/ogsc/run/composer
 

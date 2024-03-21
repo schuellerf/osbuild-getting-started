@@ -1,10 +1,12 @@
 FROM registry.fedoraproject.org/fedora:40
 
+ARG osbuild_distro_version=fc38
+
 ARG weldr_client_version=*
 
 RUN \
     dnf in -y \
-        $(echo "/rpms/weldr-client-${weldr_client_version}-1.*.x86_64.rpm") && \
+        $(echo "/rpms/weldr-client-${weldr_client_version}-1.${osbuild_distro_version}.x86_64.rpm") && \
         dnf clean all
 
 RUN \

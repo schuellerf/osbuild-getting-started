@@ -78,3 +78,13 @@ make rpms/weldr-client weldr_client_version=v35
 
 If you've built at least `osbuild` and `osbuild-composer` and their RPMs it's time
 to get things up and running.
+
+
+
+
+
+# Notes
+that is on purpose?
+Error:
+Problem: conflicting requests
+- nothing provides osbuild = 112-1.20240319gitdd57546.fc38 needed by osbuild-depsolve-dnf-112-1.20240319gitdd57546.fc38.noarch from @commandline

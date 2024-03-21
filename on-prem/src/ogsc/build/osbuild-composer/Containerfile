@@ -22,13 +22,16 @@ RUN \
     mkdir /build
 
 ARG osbuild_composer_version=main
+ARG local_code
 
-RUN \
+RUN if [[ -z "$local_code" ]] \
     git clone \
         -b ${osbuild_composer_version} \
         --depth 1 \
         https://github.com/osbuild/osbuild-composer \
         /build/osbuild-composer
+
+RUN if [[ -n "$local_code" ]] COPY?
 
 WORKDIR \
     /build/osbuild-composer

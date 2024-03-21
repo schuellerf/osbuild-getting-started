@@ -54,7 +54,6 @@ async def env(
         composer = await asyncio.create_subprocess_exec(
             "podman",
             "run",
-            "--rm",
             "--volume", f"{path_config}:/etc/osbuild-composer:ro,z",
             "--volume", f"{path_tmp}/weldr:/run/weldr:rw,z",
             "--volume", f"{path_tmp}/dnf-json:/run/osbuild-dnf-json:rw,z",
@@ -81,6 +80,18 @@ async def env(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
+        composer_dump = await asyncio.create_subprocess_exec(
+            "podman",
+            "inspect",
+            f"{prefix}-composer",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        dump = (await composer_dump.stdout.readline()).decode()
+        await composer_dump.wait()
+        print(dump)
+
         composer_ip = (await composer_inspect.stdout.readline()).decode().strip()
         await composer_inspect.wait()
 
