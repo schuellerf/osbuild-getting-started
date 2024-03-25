@@ -45,10 +45,28 @@ the two products the `image-builder` team ships:
   - our hosted [service](https://www.osbuild.org/guides/image-builder-service/architecture.html)
 
 These products make use of the individual components in slightly different configurations. Our [guides](https://www.osbuild.org/guides)
-provide more in-depth explainations of these products, their architecture and how they are configured.
+provide more in-depth explanations of these products, their architecture and how they are configured.
 
 ## Getting started
 
 For further instructions on how to run containerized versions of the CLI and service locally:
-- the [on-premise README](./on-prem/README.md) offers explainations on how to run the on-premise CLI tool.
+- the [on-premise README](./on-prem/README.md) offers explanations on how to run the on-premise CLI tool.
 - the [service README](./service/README.md) provides instructions on how to get started with a stack of the hosted service.
+
+# Improve this documentation
+
+## pre-commit
+This documentation uses https://pre-commit.com/ to raise quality already while committing.
+Please install pre-commit and enable it (if not yet done)
+
+```shell
+pre-commit install
+```
+
+It will automatically check before you commit, but you can also run it before just to check
+
+```shell
+pre-commit run --all-files
+```
+
+If you encounter a word that is ok, please add it to `.spellcheck-en-custom.txt`

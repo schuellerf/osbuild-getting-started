@@ -4,3 +4,4 @@ on-prem/build/config/*.pem
 on-prem/build/config/*.toml
 on-prem/build/config/ca
 on-prem/build/config/repositories
+dictionary.dic

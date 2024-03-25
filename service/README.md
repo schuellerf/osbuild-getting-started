@@ -1,6 +1,6 @@
-# devtools
+# Getting started with `osbuild` service containers
 
-Development Tools for Image Builder
+Development Tools for Image Builder to start up the environment for a service deployment
 
 ## Setup
 
@@ -55,7 +55,7 @@ command.
 
 ## Upload Targets
 
-Upload targets need to be configued for the Image Builder backend to upload successfully.
+Upload targets need to be configured for the Image Builder backend to upload successfully.
 This stack comes pre-configured with a generic S3 bucket which can be accessed at:
 
 `http://localhost:9000`
