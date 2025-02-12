@@ -143,8 +143,7 @@ run_service: $(addprefix $(SCRATCH_DIR)/,$(COMMON_DIRS)) service_containers
 	echo "-- Checking if any of our ports are used: $$PORTS"
 	sudo netstat -lntp|grep -E "$$(echo "$$PORTS"|tr ' ' ':')"
 	echo "-- Check done"
-	cd service
-	$(CONTAINER_COMPOSE_EXECUTABLE) up
+	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose.yml up
 
 # if you want to run the frontend yourself - outside the docker environment
 .PHONY: run_service_no_frontend

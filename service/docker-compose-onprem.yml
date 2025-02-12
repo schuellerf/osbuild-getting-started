@@ -10,25 +10,25 @@ volumes:
     driver_opts:
       type: none
       # this can be modified as desired
-      device: /scratch/image-builder-config
+      device: ${SCRATCH_DIR:-/scratch}/image-builder-config
       o: bind
   weldr_volume:
     driver_opts:
       type: none
       # this can be modified as desired
-      device: /scratch/weldr
+      device: ${SCRATCH_DIR:-/scratch}/weldr
       o: bind
   cloudapi_volume:
     driver_opts:
       type: none
       # this can be modified as desired
-      device: /scratch/cloudapi
+      device: ${SCRATCH_DIR:-/scratch}/cloudapi
       o: bind
   dnfjson_volume:
     driver_opts:
       type: none
       # this can be modified as desired
-      device: /scratch/dnf-json
+      device: ${SCRATCH_DIR:-/scratch}/dnf-json
       o: bind
 
 services:
