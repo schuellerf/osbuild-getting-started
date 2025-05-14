@@ -24,7 +24,7 @@ services:
       - ../../osbuild-composer/repositories:/config/repositories:z
 
   postgres_composer:
-    image: docker.io/postgres:10.5
+    image: docker.io/postgres:16.8
     healthcheck:
       test: [ "CMD", "pg_isready", "-h", "localhost", "-U", "postgres", "-d", "postgres" ]
       interval: 2s
@@ -115,8 +115,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  postgres_backend:
-    image: docker.io/postgres:10.5
+  postgres_image_builder_crc:
+    image: docker.io/postgres:16.8
     healthcheck:
       test: [ "CMD", "pg_isready", "-h", "localhost", "-U", "postgres", "-d", "postgres" ]
       interval: 2s
@@ -131,7 +131,7 @@ services:
       servicenet:
         ipv4_address: 172.31.0.30
 
-  backend:
+  image_builder_crc:
     image: image-builder-crc_dev
     ports:
       - 8086:8086
@@ -144,10 +144,10 @@ services:
     volumes:
       - config_volume:/etc/image-builder
     environment:
-      - LISTEN_ADDRESS=backend:8086
+      - LISTEN_ADDRESS=image_builder_crc:8086
       - LOG_LEVEL=DEBUG
       - ALLOWED_ORG_IDS=*
-      - PGHOST=postgres_backend
+      - PGHOST=postgres_image_builder_crc
       - PGPORT=5432
       - PGDATABASE=postgres
       - PGUSER=postgres
@@ -167,7 +167,7 @@ services:
         condition: service_completed_successfully
       composer:
         condition: service_healthy
-      postgres_backend:
+      postgres_image_builder_crc:
         condition: service_healthy
     restart: on-failure
     networks:
@@ -219,7 +219,7 @@ services:
     security_opt:
       - seccomp=unconfined
     environment:
-      - BACKEND_HOSTNAME=backend
+      - BACKEND_HOSTNAME=image_builder_crc
     ports:
       - 1337:1337
       - 8002:8002

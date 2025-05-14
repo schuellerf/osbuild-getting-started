@@ -184,7 +184,7 @@ run_service: $(addprefix $(SCRATCH_DIR)/,$(COMMON_DIRS)) service_containers
 # if you want to run the frontend yourself - outside the docker environment
 .PHONY: run_service_no_frontend
 run_service_no_frontend: service_containers_no_frontend
-	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose.yml up backend fauxauth worker composer minio postgres_backend postgres_composer
+	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose.yml up backend fauxauth worker composer minio postgres_image_builder_crc postgres_composer
 
 # only for strange crashes - should shut down properly in normal operation
 .PHONY: stop_service
