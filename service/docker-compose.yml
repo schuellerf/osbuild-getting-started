@@ -132,7 +132,7 @@ services:
         ipv4_address: 172.31.0.30
 
   backend:
-    image: image-builder_dev
+    image: image-builder-crc_dev
     ports:
       - 8086:8086
       - 7720:7720
@@ -177,8 +177,8 @@ services:
   fauxauth:
     image: local/osbuild-fauxauth_dev
     build:
-      context: ../../osbuild-composer
-      dockerfile: ./distribution/Dockerfile-fauxauth.dev
+      context: ../../
+      dockerfile: ./osbuild-getting-started/repos/osbuild-composer/tools/Dockerfile-fauxauth.dev
       args:
         GOMODARGS: "-modfile=go.local.mod"
     entrypoint: [ "/opt/fauxauth.py", "-a", "0.0.0.0", "-p", "8888" ]

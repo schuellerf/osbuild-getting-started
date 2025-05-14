@@ -32,19 +32,37 @@ MAKE_SUB_CALL := make CONTAINER_EXECUTABLE="$(CONTAINER_EXECUTABLE)"
 # osbuild is indirectly used by osbuild-composer
 # but we'll mention it here too for better error messages and usability
 COMMON_SRC_DEPS_NAMES := osbuild osbuild-composer pulp-client community-gateway
-COMMON_SRC_DEPS_ORIGIN := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR),$(COMMON_SRC_DEPS_NAMES))
+COMMON_SRC_DEPS_ORIGIN := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/,$(COMMON_SRC_DEPS_NAMES))
 
 ONPREM_SRC_DEPS_NAMES := weldr-client
-ONPREM_SRC_DEPS_ORIGIN := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR),$(ONPREM_SRC_DEPS_NAMES))
+ONPREM_SRC_DEPS_ORIGIN := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/,$(ONPREM_SRC_DEPS_NAMES))
 
-SERVICE_SRC_DEPS_NAMES := image-builder image-builder-frontend
-SERVICE_SRC_DEPS_ORIGIN := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR),$(SERVICE_SRC_DEPS_NAMES))
+SERVICE_SRC_DEPS_NAMES := image-builder-crc image-builder-frontend
+SERVICE_SRC_DEPS_ORIGIN := $(addprefix $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/,$(SERVICE_SRC_DEPS_NAMES))
 
 # should be set if we are already sudo - otherwise we set to "whoami"
 SUDO_USER ?= $(shell whoami)
 
-$(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) $(ONPREM_SRC_DEPS_ORIGIN):
-	@for DIR in $@; do if ! [ -d $$DIR ]; then echo "Please checkout $$DIR so it is available at $$DIR"; exit 1; fi; done
+ALL_REQUIRED_DIRS := $(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) $(ONPREM_SRC_DEPS_ORIGIN)
+
+$(ALL_REQUIRED_DIRS):
+	@if ! [ -d $@ ]; then \
+		echo "Please checkout '$$(basename $@)' so it is available at $$(readlink -f $@)"; \
+		echo "I expect a structure like this:"; \
+		echo "  $$(readlink -f $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR))"; \
+		TOTAL=$$(echo $(ALL_REQUIRED_DIRS) | wc -w); \
+		COUNT=1; \
+		for REPO in $(ALL_REQUIRED_DIRS); do \
+			if [ $$COUNT -eq $$TOTAL ]; then \
+				PREFIX="  └──"; \
+			else \
+				PREFIX="  ├──"; \
+			fi; \
+			echo "$$PREFIX $$(basename $$REPO)"; \
+			COUNT=$$((COUNT + 1)); \
+		done; \
+		exit 1; \
+	fi;
 
 COMPARE_TO_BRANCH ?= origin/main
 
@@ -57,15 +75,13 @@ ALL_SCRATCH_DIRS := $(addprefix $(SCRATCH_DIR)/,$(COMMON_DIR) $(CLI_DIRS) $(DATA
 
 OSBUILD_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/osbuild
 OSBUILD_COMPOSER_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/osbuild-composer
+IMAGE_BUILDER_CRC_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/image-builder-crc
+IMAGE_BUILDER_FRONTEND_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/image-builder-frontend
 
 .PHONY: service_containers
-service_containers:
+service_containers: service_sub_make_backend
 	make -C $(OSBUILD_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild/Makefile.getting-started container.dev
 	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started container.dev
-
-clean:
-	make -C $(OSBUILD_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild/Makefile.getting-started clean.dev
-	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started clean.dev
 
 # internal rule for sub-calls
 # NOTE: This chowns all directories back - as we expect to run partly as root
@@ -76,15 +92,17 @@ common_sub_makes:
 	@echo "At least for podman the password as already needed now"
 
 	# creating container image from osbuild as a basis for worker
-	$(MAKE_SUB_CALL) -C $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)osbuild-composer container_worker.dev container_composer.dev
+	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started container.dev
 
 .PHONY: service_sub_make_backend
 service_sub_make_backend:
-	$(MAKE_SUB_CALL) -C $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)image-builder container.dev
+	make -C $(OSBUILD_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild/Makefile.getting-started container.dev
+	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started container.dev
+	make -C $(IMAGE_BUILDER_CRC_DIR) -f $(GETTING_STARTED_DIR)/repos/image-builder-crc/Makefile.getting-started container.dev
 
 .PHONY: service_sub_make_frontend
 service_sub_make_frontend:
-	$(MAKE_SUB_CALL) -C $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)image-builder-frontend container.dev
+	make -C $(IMAGE_BUILDER_CRC_DIR) -f $(GETTING_STARTED_DIR)/repos/image-builder-frontend/Makefile.getting-started container.dev
 
 .PHONY: service_sub_make_cleanup
 service_sub_make_cleanup:
@@ -101,7 +119,7 @@ service_sub_makes: service_sub_make_backend service_sub_make_frontend service_su
 .PHONY: onprem_sub_makes
 onprem_sub_makes:
 	# building the cli
-	$(MAKE_SUB_CALL) -C $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)weldr-client container.dev
+	$(MAKE_SUB_CALL) -C $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/weldr-client container.dev
 	@for DIR in $(COMMON_SRC_DEPS_ORIGIN) $(ONPREM_SRC_DEPS_ORIGIN); do echo "Giving directory permissions in '$$DIR' back to '$(SUDO_USER)'"; chown -R $(SUDO_USER): $$DIR || sudo chown -R $(SUDO_USER): $$DIR; done
 	@echo "Your current versions are (comparing to origin/main):"
 	bash -c './tools/git_stack.sh'
@@ -133,14 +151,17 @@ $(ALL_SCRATCH_DIRS):
 .PHONY: wipe_config
 wipe_config:
 	sudo rm -rf $(SCRATCH_DIR)/$(COMMON_DIR)
-	rm -f $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)image-builder-frontend/node_modules/.cache/webpack-dev-server/server.pem
+	rm -f $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/image-builder-frontend/node_modules/.cache/webpack-dev-server/server.pem
 
 .PHONY: clean
-clean_old: prune_service prune_onprem wipe_config
+clean: prune_service prune_onprem wipe_config
 	rm -f service_images_built.info
 	rm -f onprem_images_built.info
-	rm -rf $(SCRATCH_DIR) || (echo "Trying as root" ;sudo rm -rf $(SCRATCH_DIR))
-	for DIR in $(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) $(ONPREM_SRC_DEPS_ORIGIN); do $(MAKE_SUB_CALL) -C $$DIR clean; done
+	rm -rf $(SCRATCH_DIR) 2>/dev/null || (echo "Trying as root" ;sudo rm -rf $(SCRATCH_DIR))
+	make -C $(OSBUILD_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild/Makefile.getting-started clean.dev
+	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started clean.dev
+	make -C $(IMAGE_BUILDER_CRC_DIR) -f $(GETTING_STARTED_DIR)/repos/image-builder-crc/Makefile.getting-started clean.dev
+
 	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose.yml down --volumes
 	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose.yml rm --volumes
 	$(CONTAINER_COMPOSE_EXECUTABLE) -f service/docker-compose-onprem.yml down --volumes

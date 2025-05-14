@@ -2,7 +2,7 @@
 
 # repos to respect
 BASEDIR=$(dirname $(readlink -f $0))/../..
-REPOS="osbuild-getting-started osbuild osbuild-composer images image-builder image-builder-frontend weldr-client"
+REPOS="osbuild-getting-started osbuild osbuild-composer images image-builder-crc image-builder-frontend weldr-client"
 REPOS="$REPOS pulp-client community-gateway"
 
 ARGS=${*:-status --branch --short}
