@@ -15,14 +15,17 @@ help:
 	@echo "                           If you want empty databases"
 	@echo "  clean:                   Clean all subprojects to assure a rebuild"
 
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+GETTING_STARTED_DIR := $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
+
 # source where the other repos are locally
 # has to end with a trailing slash
-SRC_DEPS_EXTERNAL_CHECKOUT_DIR ?= ../
+export SRC_DEPS_EXTERNAL_CHECKOUT_DIR ?= $(GETTING_STARTED_DIR)/..
 
 # either "docker" or "sudo podman"
 # podman needs to build as root as it also needs to run as root afterwards
-CONTAINER_EXECUTABLE ?= docker
-CONTAINER_COMPOSE_EXECUTABLE ?= $(CONTAINER_EXECUTABLE) compose
+export CONTAINER_EXECUTABLE ?= docker
+export CONTAINER_COMPOSE_EXECUTABLE ?= $(CONTAINER_EXECUTABLE) compose
 
 MAKE_SUB_CALL := make CONTAINER_EXECUTABLE="$(CONTAINER_EXECUTABLE)"
 
@@ -51,6 +54,18 @@ COMMON_DIR := image-builder-config
 CLI_DIRS := weldr cloudapi dnf-json
 DATA_DIR := data/s3/service
 ALL_SCRATCH_DIRS := $(addprefix $(SCRATCH_DIR)/,$(COMMON_DIR) $(CLI_DIRS) $(DATA_DIR))
+
+OSBUILD_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/osbuild
+OSBUILD_COMPOSER_DIR ?= $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)/osbuild-composer
+
+.PHONY: service_containers
+service_containers:
+	make -C $(OSBUILD_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild/Makefile.getting-started container.dev
+	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started container.dev
+
+clean:
+	make -C $(OSBUILD_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild/Makefile.getting-started clean.dev
+	make -C $(OSBUILD_COMPOSER_DIR) -f $(GETTING_STARTED_DIR)/repos/osbuild-composer/Makefile.getting-started clean.dev
 
 # internal rule for sub-calls
 # NOTE: This chowns all directories back - as we expect to run partly as root
@@ -91,8 +106,8 @@ onprem_sub_makes:
 	@echo "Your current versions are (comparing to origin/main):"
 	bash -c './tools/git_stack.sh'
 
-.PHONY: service_containers
-service_containers: $(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) common_sub_makes service_sub_makes service_images_built.info
+.PHONY: service_containers_old
+service_containers_old: $(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) common_sub_makes service_sub_makes service_images_built.info
 
 .PHONY: service_containers_no_frontend
 service_containers_no_frontend: $(COMMON_SRC_DEPS_ORIGIN) $(SERVICE_SRC_DEPS_ORIGIN) common_sub_makes service_sub_makes_no_frontend service_images_built.info
@@ -121,7 +136,7 @@ wipe_config:
 	rm -f $(SRC_DEPS_EXTERNAL_CHECKOUT_DIR)image-builder-frontend/node_modules/.cache/webpack-dev-server/server.pem
 
 .PHONY: clean
-clean: prune_service prune_onprem wipe_config
+clean_old: prune_service prune_onprem wipe_config
 	rm -f service_images_built.info
 	rm -f onprem_images_built.info
 	rm -rf $(SCRATCH_DIR) || (echo "Trying as root" ;sudo rm -rf $(SCRATCH_DIR))
